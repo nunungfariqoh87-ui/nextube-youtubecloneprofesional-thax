@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NexTube Premium</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { background-color: #020617; color: #f8fafc; font-family: 'Inter', sans-serif; }
+        .glass { background: rgba(30, 41, 59, 0.5); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.1); }
+        .hover-lift { transition: all 0.3s ease; }
+        .hover-lift:hover { transform: translateY(-5px); }
+    </style>
+</head>
+<body class="min-h-screen">
+    <nav class="fixed top-0 w-full glass z-50 px-8 py-4 flex justify-between items-center border-b border-white/5">
+        <div class="flex items-center gap-3 cursor-pointer" onclick="renderPage('home')">
+            <div class="bg-red-600 p-2 rounded-xl"><i data-lucide="play" class="text-white w-5 h-5 fill-current"></i></div>
+            <span class="text-2xl font-bold tracking-tighter">Nex<span class="text-red-500">Tube</span></span>
+        </div>
+        <div id="nav-actions" class="flex gap-4">
+            <!-- Auth buttons will be injected here -->
+        </div>
+    </nav>
+
+    <main id="app" class="pt-28 px-8 max-w-7xl mx-auto">
+    </main>
+
+    <script>
+        let videos = JSON.parse(localStorage.getItem('nex_videos')) || [
+            { id: 1, title: "UI Design Trend 2025", views: "2.1M", thumb: "https://images.unsplash.com/photo-1561070791-2526d30994b5?w=600&h=340&fit=crop" }
+        ];
+        let user = JSON.parse(localStorage.getItem('nex_user'));
+
+        function renderNav() {
+            const nav = document.getElementById('nav-actions');
+            if (user) {
+                nav.innerHTML = `
+                    <button onclick="renderPage('upload')" class="bg-white/5 hover:bg-white/10 px-6 py-2 rounded-full text-sm font-semibold transition-all">Upload</button>
+                    <button onclick="logout()" class="bg-red-600/20 text-red-500 px-6 py-2 rounded-full text-sm font-semibold hover:bg-red-600/30">Keluar</button>
+                `;
+            } else {
+                nav.innerHTML = `<button onclick="renderPage('login')" class="bg-blue-600 px-6 py-2 rounded-full text-sm font-semibold">Login</button>`;
+            }
+        }
+
+        function renderPage(page, videoId = null) {
+            const app = document.getElementById('app');
+            renderNav();
+
+            if (page === 'home') {
+                app.innerHTML = `
+                    <h1 class="text-3xl font-bold mb-8">Rekomendasi Hari Ini</h1>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                        ${videos.map(v => `
+                            <div class="glass rounded-3xl p-4 hover-lift cursor-pointer" onclick="renderPage('watch', ${v.id})">
+                                <img src="${v.thumb}" class="rounded-2xl w-full h-48 object-cover mb-4">
+                                <h3 class="text-lg font-bold mb-1">${v.title}</h3>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+            } else if (page === 'login') {
+                app.innerHTML = `
+                    <div class="max-w-md mx-auto glass p-10 rounded-3xl text-center">
+                        <h2 class="text-2xl font-bold mb-6">Login ke NexTube</h2>
+                        <input id="login-user" class="w-full bg-black/30 border border-white/10 p-4 rounded-xl mb-4" placeholder="Username">
+                        <button onclick="login()" class="w-full bg-blue-600 py-4 rounded-xl font-bold hover:bg-blue-700">Masuk</button>
+                    </div>
+                `;
+            } else if (page === 'upload') {
+                if(!user) return renderPage('login');
+                app.innerHTML = `
+                    <div class="max-w-lg mx-auto glass p-10 rounded-3xl">
+                        <h2 class="text-2xl font-bold mb-6">Upload Video</h2>
+                        <input id="up-title" class="w-full bg-black/30 border border-white/10 p-4 rounded-xl mb-4" placeholder="Judul Video">
+                        <input id="up-thumb" class="w-full bg-black/30 border border-white/10 p-4 rounded-xl mb-6" placeholder="URL Thumbnail">
+                        <button onclick="handleUpload()" class="w-full bg-red-600 py-4 rounded-xl font-bold hover:bg-red-700">Publish Video</button>
+                    </div>
+                `;
+            } else if (page === 'watch') {
+                const v = videos.find(x => x.id === videoId);
+                app.innerHTML = `
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-10">
+                        <div class="lg:col-span-2">
+                            <div class="bg-black aspect-video rounded-3xl border border-white/10 flex items-center justify-center">
+                                <i data-lucide="play" class="w-20 h-20 text-white/20"></i>
+                            </div>
+                            <h1 class="text-3xl font-bold mt-6">${v.title}</h1>
+                        </div>
+                    </div>
+                `;
+            }
+            lucide.createIcons();
+        }
+
+        function login() {
+            const username = document.getElementById('login-user').value;
+            if(!username) return;
+            user = { username };
+            localStorage.setItem('nex_user', JSON.stringify(user));
+            renderPage('home');
+        }
+
+        function logout() {
+            localStorage.removeItem('nex_user');
+            user = null;
+            renderPage('home');
+        }
+
+        function handleUpload() {
+            const title = document.getElementById('up-title').value;
+            const thumb = document.getElementById('up-thumb').value;
+            videos.push({ id: Date.now(), title, thumb });
+            localStorage.setItem('nex_videos', JSON.stringify(videos));
+            renderPage('home');
+        }
+
+        renderPage('home');
+    </script>
+</body>
+</html>
