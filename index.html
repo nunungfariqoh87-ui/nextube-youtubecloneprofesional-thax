@@ -20,9 +20,8 @@
             <div class="bg-red-600 p-2 rounded-xl"><i data-lucide="play" class="text-white w-5 h-5 fill-current"></i></div>
             <span class="text-2xl font-bold tracking-tighter">Nex<span class="text-red-500">Tube</span></span>
         </div>
-        <div id="nav-actions" class="flex gap-4">
-            <!-- Auth buttons will be injected here -->
-        </div>
+        <input type="text" id="search-bar" oninput="filterVideos()" placeholder="Cari video..." class="bg-black/30 border border-white/10 px-6 py-2 rounded-full w-96 outline-none focus:border-red-500 transition-all">
+        <div id="nav-actions" class="flex gap-4"></div>
     </nav>
 
     <main id="app" class="pt-28 px-8 max-w-7xl mx-auto">
@@ -30,9 +29,16 @@
 
     <script>
         let videos = JSON.parse(localStorage.getItem('nex_videos')) || [
-            { id: 1, title: "UI Design Trend 2025", views: "2.1M", thumb: "https://images.unsplash.com/photo-1561070791-2526d30994b5?w=600&h=340&fit=crop" }
+            { id: 1, title: "UI Design Trend 2025", views: "2.1M", thumb: "https://images.unsplash.com/photo-1561070791-2526d30994b5?w=600&h=340&fit=crop" },
+            { id: 2, title: "Mastering Tailwind CSS", views: "900K", thumb: "https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=600&h=340&fit=crop" }
         ];
         let user = JSON.parse(localStorage.getItem('nex_user'));
+
+        function filterVideos() {
+            const query = document.getElementById('search-bar').value.toLowerCase();
+            const filtered = videos.filter(v => v.title.toLowerCase().includes(query));
+            renderHome(filtered);
+        }
 
         function renderNav() {
             const nav = document.getElementById('nav-actions');
@@ -46,60 +52,40 @@
             }
         }
 
+        function renderHome(list = videos) {
+            const app = document.getElementById('app');
+            app.innerHTML = `
+                <h1 class="text-3xl font-bold mb-8">Rekomendasi Hari Ini</h1>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    ${list.map(v => `
+                        <div class="glass rounded-3xl p-4 hover-lift cursor-pointer" onclick="renderPage('watch', ${v.id})">
+                            <img src="${v.thumb}" class="rounded-2xl w-full h-48 object-cover mb-4">
+                            <h3 class="text-lg font-bold mb-1">${v.title}</h3>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+            lucide.createIcons();
+        }
+
         function renderPage(page, videoId = null) {
             const app = document.getElementById('app');
             renderNav();
-
-            if (page === 'home') {
-                app.innerHTML = `
-                    <h1 class="text-3xl font-bold mb-8">Rekomendasi Hari Ini</h1>
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                        ${videos.map(v => `
-                            <div class="glass rounded-3xl p-4 hover-lift cursor-pointer" onclick="renderPage('watch', ${v.id})">
-                                <img src="${v.thumb}" class="rounded-2xl w-full h-48 object-cover mb-4">
-                                <h3 class="text-lg font-bold mb-1">${v.title}</h3>
-                            </div>
-                        `).join('')}
-                    </div>
-                `;
-            } else if (page === 'login') {
-                app.innerHTML = `
-                    <div class="max-w-md mx-auto glass p-10 rounded-3xl text-center">
-                        <h2 class="text-2xl font-bold mb-6">Login ke NexTube</h2>
-                        <input id="login-user" class="w-full bg-black/30 border border-white/10 p-4 rounded-xl mb-4" placeholder="Username">
-                        <button onclick="login()" class="w-full bg-blue-600 py-4 rounded-xl font-bold hover:bg-blue-700">Masuk</button>
-                    </div>
-                `;
+            if (page === 'home') renderHome();
+            else if (page === 'login') {
+                app.innerHTML = `<div class="max-w-md mx-auto glass p-10 rounded-3xl text-center"><h2 class="text-2xl font-bold mb-6">Login ke NexTube</h2><input id="login-user" class="w-full bg-black/30 border border-white/10 p-4 rounded-xl mb-4" placeholder="Username"><button onclick="login()" class="w-full bg-blue-600 py-4 rounded-xl font-bold hover:bg-blue-700">Masuk</button></div>`;
             } else if (page === 'upload') {
                 if(!user) return renderPage('login');
-                app.innerHTML = `
-                    <div class="max-w-lg mx-auto glass p-10 rounded-3xl">
-                        <h2 class="text-2xl font-bold mb-6">Upload Video</h2>
-                        <input id="up-title" class="w-full bg-black/30 border border-white/10 p-4 rounded-xl mb-4" placeholder="Judul Video">
-                        <input id="up-thumb" class="w-full bg-black/30 border border-white/10 p-4 rounded-xl mb-6" placeholder="URL Thumbnail">
-                        <button onclick="handleUpload()" class="w-full bg-red-600 py-4 rounded-xl font-bold hover:bg-red-700">Publish Video</button>
-                    </div>
-                `;
+                app.innerHTML = `<div class="max-w-lg mx-auto glass p-10 rounded-3xl"><h2 class="text-2xl font-bold mb-6">Upload Video</h2><input id="up-title" class="w-full bg-black/30 border border-white/10 p-4 rounded-xl mb-4" placeholder="Judul Video"><input id="up-thumb" class="w-full bg-black/30 border border-white/10 p-4 rounded-xl mb-6" placeholder="URL Thumbnail"><button onclick="handleUpload()" class="w-full bg-red-600 py-4 rounded-xl font-bold hover:bg-red-700">Publish Video</button></div>`;
             } else if (page === 'watch') {
                 const v = videos.find(x => x.id === videoId);
-                app.innerHTML = `
-                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-10">
-                        <div class="lg:col-span-2">
-                            <div class="bg-black aspect-video rounded-3xl border border-white/10 flex items-center justify-center">
-                                <i data-lucide="play" class="w-20 h-20 text-white/20"></i>
-                            </div>
-                            <h1 class="text-3xl font-bold mt-6">${v.title}</h1>
-                        </div>
-                    </div>
-                `;
+                app.innerHTML = `<div class="grid grid-cols-1 lg:grid-cols-3 gap-10"><div class="lg:col-span-2"><div class="bg-black aspect-video rounded-3xl border border-white/10 flex items-center justify-center"><i data-lucide="play" class="w-20 h-20 text-white/20"></i></div><h1 class="text-3xl font-bold mt-6">${v.title}</h1></div></div>`;
             }
             lucide.createIcons();
         }
 
         function login() {
-            const username = document.getElementById('login-user').value;
-            if(!username) return;
-            user = { username };
+            user = { username: document.getElementById('login-user').value };
             localStorage.setItem('nex_user', JSON.stringify(user));
             renderPage('home');
         }
